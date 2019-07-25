@@ -165,44 +165,7 @@ else
 fi
 
 jenkins_auth_matrix_conf=$(cat <<EOF
-<authorizationStrategy class="hudson.security.ProjectMatrixAuthorizationStrategy">
-    <permission>com.cloudbees.plugins.credentials.CredentialsProvider.Create:authenticated</permission>
-    <permission>com.cloudbees.plugins.credentials.CredentialsProvider.Delete:authenticated</permission>
-    <permission>com.cloudbees.plugins.credentials.CredentialsProvider.ManageDomains:authenticated</permission>
-    <permission>com.cloudbees.plugins.credentials.CredentialsProvider.Update:authenticated</permission>
-    <permission>com.cloudbees.plugins.credentials.CredentialsProvider.View:authenticated</permission>
-    <permission>hudson.model.Computer.Build:authenticated</permission>
-    <permission>hudson.model.Computer.Configure:authenticated</permission>
-    <permission>hudson.model.Computer.Connect:authenticated</permission>
-    <permission>hudson.model.Computer.Create:authenticated</permission>
-    <permission>hudson.model.Computer.Delete:authenticated</permission>
-    <permission>hudson.model.Computer.Disconnect:authenticated</permission>
-    <permission>hudson.model.Hudson.Administer:authenticated</permission>
-    <permission>hudson.model.Hudson.ConfigureUpdateCenter:authenticated</permission>
-    <permission>hudson.model.Hudson.Read:authenticated</permission>
-    <permission>hudson.model.Hudson.RunScripts:authenticated</permission>
-    <permission>hudson.model.Hudson.UploadPlugins:authenticated</permission>
-    <permission>hudson.model.Item.Build:authenticated</permission>
-    <permission>hudson.model.Item.Cancel:authenticated</permission>
-    <permission>hudson.model.Item.Configure:authenticated</permission>
-    <permission>hudson.model.Item.Create:authenticated</permission>
-    <permission>hudson.model.Item.Delete:authenticated</permission>
-    <permission>hudson.model.Item.Discover:authenticated</permission>
-    <permission>hudson.model.Item.Move:authenticated</permission>
-    <permission>hudson.model.Item.Read:authenticated</permission>
-    <permission>hudson.model.Item.Workspace:authenticated</permission>
-    <permission>hudson.model.Run.Delete:authenticated</permission>
-    <permission>hudson.model.Run.Replay:authenticated</permission>
-    <permission>hudson.model.Run.Update:authenticated</permission>
-    <permission>hudson.model.View.Configure:authenticated</permission>
-    <permission>hudson.model.View.Create:authenticated</permission>
-    <permission>hudson.model.View.Delete:authenticated</permission>
-    <permission>hudson.model.View.Read:authenticated</permission>
-    <permission>hudson.scm.SCM.Tag:authenticated</permission>
-    <permission>hudson.model.Hudson.Read:anonymous</permission>
-    <permission>hudson.model.Item.Discover:anonymous</permission>
-    <permission>hudson.model.Item.Read:anonymous</permission>
-</authorizationStrategy>
+<authorizationStrategy class="hudson.security.AuthorizationStrategy$Unsecured"/>
 EOF
 )
 
@@ -464,24 +427,6 @@ elif [ "${cloud_agents}" == 'aci' ]; then
   echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
 fi
 
-#install nginx
-sudo apt-get install nginx --yes
-
-#configure nginx
-echo "${nginx_reverse_proxy_conf}" | sudo tee /etc/nginx/sites-enabled/default > /dev/null
-
-#don't show version in headers
-sudo sed -i "s|.*server_tokens.*|server_tokens off;|" /etc/nginx/nginx.conf
-
-#install jenkins-on-azure web page
-run_util_script "jenkins/jenkins-on-azure/install-web-page.sh" -u "${jenkins_fqdn}"  -l "${azure_web_page_location}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
-
-#restart nginx
-sudo service nginx restart
-
-#Install Maven
-sudo apt-get install maven --yes
-
 # Update Active Directory Configuration for Jenkins
 
 jenkins_ad_conf=$(cat <<EOF
@@ -506,6 +451,24 @@ EOF
 inter_jenkins_config=$(sed -zr -e"s|<securityRealm.*</securityRealm>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
 final_jenkins_config=${inter_jenkins_config//'{auth-strategy-token}'/${jenkins_ad_conf}}
 echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
+
+#install nginx
+sudo apt-get install nginx --yes
+
+#configure nginx
+echo "${nginx_reverse_proxy_conf}" | sudo tee /etc/nginx/sites-enabled/default > /dev/null
+
+#don't show version in headers
+sudo sed -i "s|.*server_tokens.*|server_tokens off;|" /etc/nginx/nginx.conf
+
+#install jenkins-on-azure web page
+run_util_script "jenkins/jenkins-on-azure/install-web-page.sh" -u "${jenkins_fqdn}"  -l "${azure_web_page_location}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
+
+#restart nginx
+sudo service nginx restart
+
+#Install Maven
+sudo apt-get install maven --yes
 
 # Restart Jenkins
 #
