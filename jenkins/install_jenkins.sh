@@ -16,12 +16,15 @@ Arguments
   --subscription_id|-subid            : The subscription ID of the SP.
   --tenant_id|-tid                    : The tenant id of the SP.
   --artifacts_location|-al            : Url used to reference other scripts/artifacts.
-  --sas_token|-st                     : A sas token needed if the artifacts location is private.
   --cloud_agents|-ca                  : The type of the cloud agents: aci, vm or no.
   --resource_group|-rg                : the resource group name.
   --location|-lo                      : the resource group location.
+  --ad_server|-ad                     : Active Directory Server IP
+  --ad_user|-au                       : Active Directory User
+  --ad_password|-ap                   : Active Directory Password
 EOF
 }
+
 
 function throw_if_empty() {
   local name="$1"
@@ -109,10 +112,6 @@ do
       artifacts_location="$1"
       shift
       ;;
-    --sas_token|-st)
-      artifacts_location_sas_token="$1"
-      shift
-      ;;
     --cloud_agents|-ca)
       cloud_agents="$1"
       shift
@@ -125,6 +124,18 @@ do
       location="$1"
       shift
       ;;
+	--ad_server|-ad)
+	  ad_server="$1"
+	  shift
+	  ;;
+	--ad_user|-au)
+	  ad_user="$1"
+	  shift
+	  ;;
+	--ad_password|-ap)
+	  ad_password="$1"
+	  shift
+	  ;;
     --help|-help|-h)
       print_usage
       exit 13
@@ -134,6 +145,8 @@ do
       exit -1
   esac
 done
+
+ad_password=$(echo $ad_password | base64)
 
 throw_if_empty --jenkins_fqdn $jenkins_fqdn
 throw_if_empty --jenkins_release_type $jenkins_release_type
@@ -189,6 +202,20 @@ jenkins_auth_matrix_conf=$(cat <<EOF
     <permission>hudson.model.Item.Discover:anonymous</permission>
     <permission>hudson.model.Item.Read:anonymous</permission>
 </authorizationStrategy>
+<securityRealm class="hudson.plugins.active_directory.ActiveDirectorySecurityRealm" plugin="active-directory@2.16">
+<domains>
+  <hudson.plugins.active__directory.ActiveDirectoryDomain>
+	<name>cloudsat.glhc</name>
+	<servers>$ad_server:3268</servers>
+	<bindName>$ad_user</bindName>
+	<bindPassword>${ad_password}</bindPassword>
+	<tlsConfiguration>TRUST_ALL_CERTIFICATES</tlsConfiguration>
+  </hudson.plugins.active__directory.ActiveDirectoryDomain>
+</domains>
+<startTls>true</startTls>
+<groupLookupStrategy>AUTO</groupLookupStrategy>
+<removeIrrelevantGroups>false</removeIrrelevantGroups>
+</securityRealm>
 EOF
 )
 
@@ -281,7 +308,7 @@ retry_until_successful sudo test -f /var/lib/jenkins/secrets/initialAdminPasswor
 retry_until_successful run_util_script "jenkins/run-cli-command.sh" -c "version"
 
 #We need to install workflow-aggregator so all the options in the auth matrix are valid
-plugins=(azure-vm-agents windows-azure-storage matrix-auth workflow-aggregator azure-app-service tfs azure-acs azure-container-agents)
+plugins=(active-directory azure-vm-agents windows-azure-storage matrix-auth workflow-aggregator azure-app-service tfs azure-acs azure-container-agents github-branch-source envinject azure-credentials)
 for plugin in "${plugins[@]}"; do
   run_util_script "jenkins/run-cli-command.sh" -c "install-plugin $plugin -deploy"
 done
@@ -465,6 +492,9 @@ run_util_script "jenkins/jenkins-on-azure/install-web-page.sh" -u "${jenkins_fqd
 #restart nginx
 sudo service nginx restart
 
+#Install Maven
+sudo apt-get install maven --yes
+
 # Restart Jenkins
 #
 # As of Jenkins 2.107.3, reload-configuration is not sufficient to instruct Jenkins to pick up all the configuration
@@ -479,3 +509,13 @@ retry_until_successful run_util_script "jenkins/run-cli-command.sh" -c "version"
 #install common tools
 sudo apt-get install git --yes
 sudo apt-get install azure-cli --yes
+
+# Download Jenkins CLI
+
+sudo wget http://localhost:8080/jnlpJars/jenkins-cli.jar
+
+plugins=( "plain-credentials" "azure-credentials" "kubernetes-cd" "pipeline-build-step" \
+          "cloud-stats" "scm-api" "bouncycastle-api" "ssh-credentials" "workflow-step-api" \
+		  "pipeline-input-step" "active-directory" "docker-commons" "github" "email-ext" \
+		  "ssh-slaves" "github-branch-source" "github-api" "ws-cleanup" "ant" "azure-app-service" \
+		  "azure-container-agents" "azure-acs" "matrix-project" "timestamper")
