@@ -203,20 +203,6 @@ jenkins_auth_matrix_conf=$(cat <<EOF
     <permission>hudson.model.Item.Discover:anonymous</permission>
     <permission>hudson.model.Item.Read:anonymous</permission>
 </authorizationStrategy>
-<securityRealm class="hudson.plugins.active_directory.ActiveDirectorySecurityRealm" plugin="active-directory@2.16">
-<domains>
-  <hudson.plugins.active__directory.ActiveDirectoryDomain>
-	<name>cloudsat.glhc</name>
-	<servers>$ad_server:3268</servers>
-	<bindName>$ad_user</bindName>
-	<bindPassword>${ad_password}</bindPassword>
-	<tlsConfiguration>TRUST_ALL_CERTIFICATES</tlsConfiguration>
-  </hudson.plugins.active__directory.ActiveDirectoryDomain>
-</domains>
-<startTls>true</startTls>
-<groupLookupStrategy>AUTO</groupLookupStrategy>
-<removeIrrelevantGroups>false</removeIrrelevantGroups>
-</securityRealm>
 EOF
 )
 
@@ -315,7 +301,7 @@ for plugin in "${plugins[@]}"; do
 done
 
 #allow anonymous read access
-inter_jenkins_config=$(sed -zr -e"s|<authorizationStrategy.*</securityRealm>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
+inter_jenkins_config=$(sed -zr -e"s|<authorizationStrategy.*</authorizationStrategy>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
 final_jenkins_config=${inter_jenkins_config//'{auth-strategy-token}'/${jenkins_auth_matrix_conf}}
 echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
 
@@ -366,7 +352,7 @@ sp_cred=$(cat <<EOF
 EOF
 )
 
-#retry_until_successful run_util_script "jenkins/run-cli-command.sh" -c "version"
+retry_until_successful run_util_script "jenkins/run-cli-command.sh" -c "version"
 
 if [ "${service_principal_type}" == 'msi' ]; then
   echo "${msi_cred}" > msi_cred.xml
@@ -495,6 +481,31 @@ sudo service nginx restart
 
 #Install Maven
 sudo apt-get install maven --yes
+
+# Update Active Directory Configuration for Jenkins
+
+jenkins_ad_conf=$(cat <<EOF
+<securityRealm class="hudson.plugins.active_directory.ActiveDirectorySecurityRealm" plugin="active-directory@2.16">
+<domains>
+  <hudson.plugins.active__directory.ActiveDirectoryDomain>
+	<name>cloudsat.glhc</name>
+	<servers>$ad_server:3268</servers>
+	<bindName>$ad_user</bindName>
+	<bindPassword>${ad_password}</bindPassword>
+	<tlsConfiguration>TRUST_ALL_CERTIFICATES</tlsConfiguration>
+  </hudson.plugins.active__directory.ActiveDirectoryDomain>
+</domains>
+<startTls>true</startTls>
+<groupLookupStrategy>AUTO</groupLookupStrategy>
+<removeIrrelevantGroups>false</removeIrrelevantGroups>
+</securityRealm>
+EOF
+)
+
+#allow anonymous read access
+inter_jenkins_config=$(sed -zr -e"s|<securityRealm.*</securityRealm>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
+final_jenkins_config=${inter_jenkins_config//'{auth-strategy-token}'/${jenkins_ad_conf}}
+echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
 
 # Restart Jenkins
 #
