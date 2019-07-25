@@ -165,7 +165,7 @@ else
 fi
 
 jenkins_auth_matrix_conf=$(cat <<EOF
-<authorizationStrategy class="hudson.security.AuthorizationStrategy$Unsecured"/>
+<authorizationStrategy class="hudson.security.AuthorizationStrategy\$Unsecured"/>
 EOF
 )
 
