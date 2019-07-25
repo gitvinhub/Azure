@@ -366,7 +366,7 @@ sp_cred=$(cat <<EOF
 EOF
 )
 
-retry_until_successful run_util_script "jenkins/run-cli-command.sh" -c "version"
+#retry_until_successful run_util_script "jenkins/run-cli-command.sh" -c "version"
 
 if [ "${service_principal_type}" == 'msi' ]; then
   echo "${msi_cred}" > msi_cred.xml
