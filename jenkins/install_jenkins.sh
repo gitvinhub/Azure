@@ -62,8 +62,9 @@ function retry_until_successful {
 }
 
 #defaults
-artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
-jenkins_version_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/jenkins/jenkins-verified-ver"
+#artifacts_location="https://raw.githubusercontent.com/gitvinhub/Azure/master/"
+jenkins_version_location=$artifacts_location'jenkins/jenkins-verified-ver'
+#jenkins_version_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/jenkins/jenkins-verified-ver"
 azure_web_page_location="/usr/share/nginx/azure"
 jenkins_release_type="LTS"
 
@@ -314,7 +315,7 @@ for plugin in "${plugins[@]}"; do
 done
 
 #allow anonymous read access
-inter_jenkins_config=$(sed -zr -e"s|<authorizationStrategy.*</authorizationStrategy>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
+inter_jenkins_config=$(sed -zr -e"s|<authorizationStrategy.*</securityRealm>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
 final_jenkins_config=${inter_jenkins_config//'{auth-strategy-token}'/${jenkins_auth_matrix_conf}}
 echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
 
@@ -509,13 +510,3 @@ retry_until_successful run_util_script "jenkins/run-cli-command.sh" -c "version"
 #install common tools
 sudo apt-get install git --yes
 sudo apt-get install azure-cli --yes
-
-# Download Jenkins CLI
-
-sudo wget http://localhost:8080/jnlpJars/jenkins-cli.jar
-
-plugins=( "plain-credentials" "azure-credentials" "kubernetes-cd" "pipeline-build-step" \
-          "cloud-stats" "scm-api" "bouncycastle-api" "ssh-credentials" "workflow-step-api" \
-		  "pipeline-input-step" "active-directory" "docker-commons" "github" "email-ext" \
-		  "ssh-slaves" "github-branch-source" "github-api" "ws-cleanup" "ant" "azure-app-service" \
-		  "azure-container-agents" "azure-acs" "matrix-project" "timestamper")
