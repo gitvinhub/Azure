@@ -171,43 +171,6 @@ fi
 
 jenkins_auth_matrix_conf=$(cat <<EOF
 <authorizationStrategy class="hudson.security.AuthorizationStrategy\$Unsecured"/>
-    <permission>com.cloudbees.plugins.credentials.CredentialsProvider.Create:authenticated</permission>
-    <permission>com.cloudbees.plugins.credentials.CredentialsProvider.Delete:authenticated</permission>
-    <permission>com.cloudbees.plugins.credentials.CredentialsProvider.ManageDomains:authenticated</permission>
-    <permission>com.cloudbees.plugins.credentials.CredentialsProvider.Update:authenticated</permission>
-    <permission>com.cloudbees.plugins.credentials.CredentialsProvider.View:authenticated</permission>
-    <permission>hudson.model.Computer.Build:authenticated</permission>
-    <permission>hudson.model.Computer.Configure:authenticated</permission>
-    <permission>hudson.model.Computer.Connect:authenticated</permission>
-    <permission>hudson.model.Computer.Create:authenticated</permission>
-    <permission>hudson.model.Computer.Delete:authenticated</permission>
-    <permission>hudson.model.Computer.Disconnect:authenticated</permission>
-    <permission>hudson.model.Hudson.Administer:authenticated</permission>
-    <permission>hudson.model.Hudson.ConfigureUpdateCenter:authenticated</permission>
-    <permission>hudson.model.Hudson.Read:authenticated</permission>
-    <permission>hudson.model.Hudson.RunScripts:authenticated</permission>
-    <permission>hudson.model.Hudson.UploadPlugins:authenticated</permission>
-    <permission>hudson.model.Item.Build:authenticated</permission>
-    <permission>hudson.model.Item.Cancel:authenticated</permission>
-    <permission>hudson.model.Item.Configure:authenticated</permission>
-    <permission>hudson.model.Item.Create:authenticated</permission>
-    <permission>hudson.model.Item.Delete:authenticated</permission>
-    <permission>hudson.model.Item.Discover:authenticated</permission>
-    <permission>hudson.model.Item.Move:authenticated</permission>
-    <permission>hudson.model.Item.Read:authenticated</permission>
-    <permission>hudson.model.Item.Workspace:authenticated</permission>
-    <permission>hudson.model.Run.Delete:authenticated</permission>
-    <permission>hudson.model.Run.Replay:authenticated</permission>
-    <permission>hudson.model.Run.Update:authenticated</permission>
-    <permission>hudson.model.View.Configure:authenticated</permission>
-    <permission>hudson.model.View.Create:authenticated</permission>
-    <permission>hudson.model.View.Delete:authenticated</permission>
-    <permission>hudson.model.View.Read:authenticated</permission>
-    <permission>hudson.scm.SCM.Tag:authenticated</permission>
-    <permission>hudson.model.Hudson.Read:anonymous</permission>
-    <permission>hudson.model.Item.Discover:anonymous</permission>
-    <permission>hudson.model.Item.Read:anonymous</permission>
-</authorizationStrategy>
 EOF
 )
 
@@ -489,10 +452,7 @@ jenkins_ad_conf=$(cat <<EOF
 EOF
 )
 
-#allow anonymous read access
-echo "${jenkins_ad_conf}" > jenkins_ad_conf.xml
-run_util_script "jenkins/run-cli-command.sh" -c "create-credentials-by-xml system::system::jenkins _" -cif jenkins_ad_conf.xml
-rm jenkins_ad_conf.xml
+#Enabling Active Directory
 inter_jenkins_config=$(sed -zr -e"s|<securityRealm.*</securityRealm>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
 final_jenkins_config=${inter_jenkins_config//'{auth-strategy-token}'/${jenkins_ad_conf}}
 echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
