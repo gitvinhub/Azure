@@ -126,18 +126,22 @@ do
       location="$1"
       shift
       ;;
-	--ad_server|-ad)
-	  ad_server="$1"
-	  shift
-	  ;;
-	--ad_user|-au)
-	  ad_user="$1"
-	  shift
-	  ;;
-	--ad_password|-ap)
-	  ad_password="$1"
-	  shift
-	  ;;
+    --ad_name|-an)
+      ad_name="$1"
+      shift
+      ;;
+    --ad_server|-ad)
+      ad_server="$1"
+      shift
+      ;;
+    --ad_user|-au)
+      ad_user="$1"
+      shift
+      ;;
+    --ad_password|-ap)
+      ad_password="$1"
+      shift
+      ;;
     --help|-help|-h)
       print_usage
       exit 13
