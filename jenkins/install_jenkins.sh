@@ -147,7 +147,7 @@ do
   esac
 done
 
-ad_password=$(echo $ad_password | base64)
+#ad_password=$(echo $ad_password | base64)
 
 throw_if_empty --jenkins_fqdn $jenkins_fqdn
 throw_if_empty --jenkins_release_type $jenkins_release_type
@@ -448,6 +448,9 @@ EOF
 )
 
 #allow anonymous read access
+echo "${jenkins_ad_conf}" > jenkins_ad_conf.xml
+run_util_script "jenkins/run-cli-command.sh" -c "create-credentials-by-xml system::system::jenkins _" -cif jenkins_ad_conf.xml
+rm jenkins_ad_conf.xml
 inter_jenkins_config=$(sed -zr -e"s|<securityRealm.*</securityRealm>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
 final_jenkins_config=${inter_jenkins_config//'{auth-strategy-token}'/${jenkins_ad_conf}}
 echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
