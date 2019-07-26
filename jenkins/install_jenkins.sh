@@ -19,9 +19,10 @@ Arguments
   --cloud_agents|-ca                  : The type of the cloud agents: aci, vm or no.
   --resource_group|-rg                : the resource group name.
   --location|-lo                      : the resource group location.
-  --ad_server|-ad                     : Active Directory Server IP
-  --ad_user|-au                       : Active Directory User
-  --ad_password|-ap                   : Active Directory Password
+  --ad_name|-an                       : Active Directory Name.
+  --ad_server|-ad                     : Active Directory Server IP.
+  --ad_user|-au                       : Active Directory User.
+  --ad_password|-ap                   : Active Directory Password.
 EOF
 }
 
@@ -147,7 +148,7 @@ do
   esac
 done
 
-#ad_password=$(echo $ad_password | base64)
+ad_password=$(java -jar jenkins-cli.jar -s http://localhost:8080 groovy = < password_generator.groovy $ad_password)
 
 throw_if_empty --jenkins_fqdn $jenkins_fqdn
 throw_if_empty --jenkins_release_type $jenkins_release_type
@@ -166,6 +167,43 @@ fi
 
 jenkins_auth_matrix_conf=$(cat <<EOF
 <authorizationStrategy class="hudson.security.AuthorizationStrategy\$Unsecured"/>
+    <permission>com.cloudbees.plugins.credentials.CredentialsProvider.Create:authenticated</permission>
+    <permission>com.cloudbees.plugins.credentials.CredentialsProvider.Delete:authenticated</permission>
+    <permission>com.cloudbees.plugins.credentials.CredentialsProvider.ManageDomains:authenticated</permission>
+    <permission>com.cloudbees.plugins.credentials.CredentialsProvider.Update:authenticated</permission>
+    <permission>com.cloudbees.plugins.credentials.CredentialsProvider.View:authenticated</permission>
+    <permission>hudson.model.Computer.Build:authenticated</permission>
+    <permission>hudson.model.Computer.Configure:authenticated</permission>
+    <permission>hudson.model.Computer.Connect:authenticated</permission>
+    <permission>hudson.model.Computer.Create:authenticated</permission>
+    <permission>hudson.model.Computer.Delete:authenticated</permission>
+    <permission>hudson.model.Computer.Disconnect:authenticated</permission>
+    <permission>hudson.model.Hudson.Administer:authenticated</permission>
+    <permission>hudson.model.Hudson.ConfigureUpdateCenter:authenticated</permission>
+    <permission>hudson.model.Hudson.Read:authenticated</permission>
+    <permission>hudson.model.Hudson.RunScripts:authenticated</permission>
+    <permission>hudson.model.Hudson.UploadPlugins:authenticated</permission>
+    <permission>hudson.model.Item.Build:authenticated</permission>
+    <permission>hudson.model.Item.Cancel:authenticated</permission>
+    <permission>hudson.model.Item.Configure:authenticated</permission>
+    <permission>hudson.model.Item.Create:authenticated</permission>
+    <permission>hudson.model.Item.Delete:authenticated</permission>
+    <permission>hudson.model.Item.Discover:authenticated</permission>
+    <permission>hudson.model.Item.Move:authenticated</permission>
+    <permission>hudson.model.Item.Read:authenticated</permission>
+    <permission>hudson.model.Item.Workspace:authenticated</permission>
+    <permission>hudson.model.Run.Delete:authenticated</permission>
+    <permission>hudson.model.Run.Replay:authenticated</permission>
+    <permission>hudson.model.Run.Update:authenticated</permission>
+    <permission>hudson.model.View.Configure:authenticated</permission>
+    <permission>hudson.model.View.Create:authenticated</permission>
+    <permission>hudson.model.View.Delete:authenticated</permission>
+    <permission>hudson.model.View.Read:authenticated</permission>
+    <permission>hudson.scm.SCM.Tag:authenticated</permission>
+    <permission>hudson.model.Hudson.Read:anonymous</permission>
+    <permission>hudson.model.Item.Discover:anonymous</permission>
+    <permission>hudson.model.Item.Read:anonymous</permission>
+</authorizationStrategy>
 EOF
 )
 
@@ -433,10 +471,10 @@ jenkins_ad_conf=$(cat <<EOF
 <securityRealm class="hudson.plugins.active_directory.ActiveDirectorySecurityRealm" plugin="active-directory@2.16">
 <domains>
   <hudson.plugins.active__directory.ActiveDirectoryDomain>
-	<name>cloudsat.glhc</name>
+	<name>$ad_name</name>
 	<servers>$ad_server:3268</servers>
 	<bindName>$ad_user</bindName>
-	<bindPassword>${ad_password}</bindPassword>
+	<bindPassword>$ad_password</bindPassword>
 	<tlsConfiguration>TRUST_ALL_CERTIFICATES</tlsConfiguration>
   </hudson.plugins.active__directory.ActiveDirectoryDomain>
 </domains>
@@ -481,8 +519,6 @@ sudo apt-get install maven --yes
 #
 # A restart will do the full reloading.
 sudo service jenkins restart
-# Wait until Jenkins is fully startup and functioning.
-retry_until_successful run_util_script "jenkins/run-cli-command.sh" -c "version"
 
 #install common tools
 sudo apt-get install git --yes
