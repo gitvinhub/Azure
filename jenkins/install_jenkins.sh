@@ -153,6 +153,7 @@ do
 done
 
 ad_password=$(java -jar jenkins-cli.jar -s http://localhost:8080 groovy = < $password_generator_file $ad_password)
+echo $ad_password
 
 throw_if_empty --jenkins_fqdn $jenkins_fqdn
 throw_if_empty --jenkins_release_type $jenkins_release_type
