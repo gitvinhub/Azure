@@ -63,9 +63,9 @@ function retry_until_successful {
 }
 
 #defaults
-#artifacts_location="https://raw.githubusercontent.com/gitvinhub/Azure/master/"
 jenkins_version_location=$artifacts_location'jenkins/jenkins-verified-ver'
-#jenkins_version_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/jenkins/jenkins-verified-ver"
+password_generator_file=$artifacts_location'password_generator.groovy'
+
 azure_web_page_location="/usr/share/nginx/azure"
 jenkins_release_type="LTS"
 
@@ -152,7 +152,7 @@ do
   esac
 done
 
-ad_password=$(java -jar jenkins-cli.jar -s http://localhost:8080 groovy = < password_generator.groovy $ad_password)
+ad_password=$(java -jar jenkins-cli.jar -s http://localhost:8080 groovy = < $password_generator_file $ad_password)
 
 throw_if_empty --jenkins_fqdn $jenkins_fqdn
 throw_if_empty --jenkins_release_type $jenkins_release_type
