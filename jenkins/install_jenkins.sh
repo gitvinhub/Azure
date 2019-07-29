@@ -62,16 +62,6 @@ function retry_until_successful {
   done;
 }
 
-#defaults
-jenkins_version_location=$artifacts_location'jenkins-verified-ver'
-password_generator_file=$artifacts_location'password_generator.groovy'
-azure_web_page_location="/usr/share/nginx/azure"
-jenkins_release_type="LTS"
-artifacts_location_sas_token=""
-
-echo "ARTIFACTS LOCATION: "$artifacts_location
-echo "JENKINSVERISONLOCATION: "$jenkins_version_location
-
 while [[ $# > 0 ]]
 do
   key="$1"
@@ -154,6 +144,16 @@ do
       exit -1
   esac
 done
+
+#defaults
+jenkins_version_location=$artifacts_location'jenkins-verified-ver'
+password_generator_file=$artifacts_location'password_generator.groovy'
+azure_web_page_location="/usr/share/nginx/azure"
+jenkins_release_type="LTS"
+artifacts_location_sas_token=""
+
+echo "ARTIFACTS LOCATION: "$artifacts_location
+echo "JENKINSVERISONLOCATION: "$jenkins_version_location
 
 # Download Groovy script
 echo "Downloading Groovy script to generate password"
