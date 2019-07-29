@@ -156,10 +156,11 @@ echo "ARTIFACTS LOCATION: "$artifacts_location
 echo "JENKINSVERISONLOCATION: "$jenkins_version_location
 
 # Download Groovy script
-echo "Downloading Groovy script to generate password"
+echo "Downloading Groovy script to generate password: "$password_generator_file
 wget $password_generator_file
-ad_password=$(java -jar jenkins-cli.jar -s http://localhost:8080 groovy = < password_generator.groovy $ad_password)
-echo "AD PASSWORD: "$ad_password
+echo $(ls -la)
+ad_gen_password=$(java -jar jenkins-cli.jar -s http://localhost:8080 groovy = < password_generator.groovy $ad_password)
+echo "AD PASSWORD: "$ad_gen_password
 
 throw_if_empty --jenkins_fqdn $jenkins_fqdn
 throw_if_empty --jenkins_release_type $jenkins_release_type
@@ -448,7 +449,7 @@ jenkins_ad_conf=$(cat <<EOF
 	<name>$ad_name</name>
 	<servers>$ad_server:3268</servers>
 	<bindName>$ad_user</bindName>
-	<bindPassword>$ad_password</bindPassword>
+	<bindPassword>$ad_gen_password</bindPassword>
 	<tlsConfiguration>TRUST_ALL_CERTIFICATES</tlsConfiguration>
   </hudson.plugins.active__directory.ActiveDirectoryDomain>
 </domains>
