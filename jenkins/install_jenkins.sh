@@ -461,10 +461,19 @@ jenkins_ad_conf=$(cat <<EOF
 EOF
 )
 
+echo "===================================================================="
+echo $jenkins_ad_conf
+echo "===================================================================="
+
 #Enabling Active Directory
 inter_jenkins_config=$(sed -zr -e"s|<securityRealm.*</securityRealm>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
 final_jenkins_config=${inter_jenkins_config//'{auth-strategy-token}'/${jenkins_ad_conf}}
 echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
+
+echo "===================================================================="
+echo $(cat /var/lib/jenkins/config.xml)
+echo "===================================================================="
+echo "Enabled Active Directory with above configuration"
 
 #install nginx
 sudo apt-get install nginx --yes
