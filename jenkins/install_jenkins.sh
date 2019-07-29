@@ -263,14 +263,6 @@ fi
 retry_until_successful sudo test -f /var/lib/jenkins/secrets/initialAdminPassword
 retry_until_successful run_util_script "run-cli-command.sh" -c "version"
 
-# Download Groovy script
-echo "Downloading Groovy script to generate password: "$password_generator_file
-echo $ad_password
-wget $password_generator_file
-echo $(ls -la)
-ad_gen_password=$(java -jar jenkins-cli.jar -s http://localhost:8080 groovy = < password_generator.groovy $ad_password)
-echo "AD PASSWORD: "$ad_gen_password
-
 #We need to install workflow-aggregator so all the options in the auth matrix are valid
 plugins=(active-directory azure-vm-agents windows-azure-storage matrix-auth workflow-aggregator azure-app-service tfs azure-acs azure-container-agents github-branch-source envinject azure-credentials)
 for plugin in "${plugins[@]}"; do
@@ -442,6 +434,14 @@ elif [ "${cloud_agents}" == 'aci' ]; then
 fi
 
 # Update Active Directory Configuration for Jenkins
+
+# Download Groovy script
+echo "Downloading Groovy script to generate password: "$password_generator_file
+echo $ad_password
+wget $password_generator_file
+echo $(ls -la)
+ad_gen_password=$(java -jar jenkins-cli.jar -s http://localhost:8080 groovy = < password_generator.groovy $ad_password)
+echo "AD PASSWORD: "$ad_gen_password
 
 jenkins_ad_conf=$(cat <<EOF
 <securityRealm class="hudson.plugins.active_directory.ActiveDirectorySecurityRealm" plugin="active-directory@2.16">
