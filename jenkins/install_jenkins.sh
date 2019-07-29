@@ -155,14 +155,6 @@ artifacts_location_sas_token=""
 echo "ARTIFACTS LOCATION: "$artifacts_location
 echo "JENKINSVERISONLOCATION: "$jenkins_version_location
 
-# Download Groovy script
-echo "Downloading Groovy script to generate password: "$password_generator_file
-echo $ad_password
-wget $password_generator_file
-echo $(ls -la)
-ad_gen_password=$(java -jar jenkins-cli.jar -s http://localhost:8080 groovy = < password_generator.groovy $ad_password)
-echo "AD PASSWORD: "$ad_gen_password
-
 throw_if_empty --jenkins_fqdn $jenkins_fqdn
 throw_if_empty --jenkins_release_type $jenkins_release_type
 if [[ "$jenkins_release_type" != "LTS" ]] && [[ "$jenkins_release_type" != "weekly" ]] && [[ "$jenkins_release_type" != "verified" ]]; then
@@ -270,6 +262,14 @@ fi
 
 retry_until_successful sudo test -f /var/lib/jenkins/secrets/initialAdminPassword
 retry_until_successful run_util_script "run-cli-command.sh" -c "version"
+
+# Download Groovy script
+echo "Downloading Groovy script to generate password: "$password_generator_file
+echo $ad_password
+wget $password_generator_file
+echo $(ls -la)
+ad_gen_password=$(java -jar jenkins-cli.jar -s http://localhost:8080 groovy = < password_generator.groovy $ad_password)
+echo "AD PASSWORD: "$ad_gen_password
 
 #We need to install workflow-aggregator so all the options in the auth matrix are valid
 plugins=(active-directory azure-vm-agents windows-azure-storage matrix-auth workflow-aggregator azure-app-service tfs azure-acs azure-container-agents github-branch-source envinject azure-credentials)
