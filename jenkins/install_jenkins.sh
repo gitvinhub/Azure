@@ -63,11 +63,14 @@ function retry_until_successful {
 }
 
 #defaults
-jenkins_version_location=$artifacts_location'jenkins/jenkins-verified-ver'
+jenkins_version_location=$artifacts_location'jenkins-verified-ver'
 password_generator_file=$artifacts_location'password_generator.groovy'
-
 azure_web_page_location="/usr/share/nginx/azure"
 jenkins_release_type="LTS"
+artifacts_location_sas_token=""
+
+echo "ARTIFACTS LOCATION: "$artifacts_location
+echo "JENKINSVERISONLOCATION: "$jenkins_version_location
 
 while [[ $# > 0 ]]
 do
@@ -153,7 +156,7 @@ do
 done
 
 ad_password=$(java -jar jenkins-cli.jar -s http://localhost:8080 groovy = < $password_generator_file $ad_password)
-echo $ad_password
+echo "AD PASSWORD: "$ad_password
 
 throw_if_empty --jenkins_fqdn $jenkins_fqdn
 throw_if_empty --jenkins_release_type $jenkins_release_type
@@ -261,12 +264,12 @@ else
 fi
 
 retry_until_successful sudo test -f /var/lib/jenkins/secrets/initialAdminPassword
-retry_until_successful run_util_script "jenkins/run-cli-command.sh" -c "version"
+retry_until_successful run_util_script "run-cli-command.sh" -c "version"
 
 #We need to install workflow-aggregator so all the options in the auth matrix are valid
 plugins=(active-directory azure-vm-agents windows-azure-storage matrix-auth workflow-aggregator azure-app-service tfs azure-acs azure-container-agents github-branch-source envinject azure-credentials)
 for plugin in "${plugins[@]}"; do
-  run_util_script "jenkins/run-cli-command.sh" -c "install-plugin $plugin -deploy"
+  run_util_script "run-cli-command.sh" -c "install-plugin $plugin -deploy"
 done
 
 #allow anonymous read access
@@ -321,15 +324,15 @@ sp_cred=$(cat <<EOF
 EOF
 )
 
-retry_until_successful run_util_script "jenkins/run-cli-command.sh" -c "version"
+retry_until_successful run_util_script "run-cli-command.sh" -c "version"
 
 if [ "${service_principal_type}" == 'msi' ]; then
   echo "${msi_cred}" > msi_cred.xml
-  run_util_script "jenkins/run-cli-command.sh" -c "create-credentials-by-xml system::system::jenkins _" -cif msi_cred.xml
+  run_util_script "run-cli-command.sh" -c "create-credentials-by-xml system::system::jenkins _" -cif msi_cred.xml
   rm msi_cred.xml
 else
   echo "${sp_cred}" > sp_cred.xml
-  run_util_script "jenkins/run-cli-command.sh" -c "create-credentials-by-xml system::system::jenkins _" -cif sp_cred.xml
+  run_util_script "run-cli-command.sh" -c "create-credentials-by-xml system::system::jenkins _" -cif sp_cred.xml
   rm sp_cred.xml
 fi
 
@@ -422,7 +425,7 @@ EOF
 
 if [ "${cloud_agents}" == 'vm' ]; then
   echo "${agent_admin_cred}" > agent_admin_cred.xml
-  run_util_script "jenkins/run-cli-command.sh" -c "create-credentials-by-xml system::system::jenkins _" -cif agent_admin_cred.xml
+  run_util_script "run-cli-command.sh" -c "create-credentials-by-xml system::system::jenkins _" -cif agent_admin_cred.xml
   rm agent_admin_cred.xml
   inter_jenkins_config=$(sed -zr -e"s|<clouds/>|{clouds}|" /var/lib/jenkins/config.xml)
   final_jenkins_config=${inter_jenkins_config//'{clouds}'/${vm_agent_conf}}
@@ -468,7 +471,7 @@ echo "${nginx_reverse_proxy_conf}" | sudo tee /etc/nginx/sites-enabled/default >
 sudo sed -i "s|.*server_tokens.*|server_tokens off;|" /etc/nginx/nginx.conf
 
 #install jenkins-on-azure web page
-run_util_script "jenkins/jenkins-on-azure/install-web-page.sh" -u "${jenkins_fqdn}"  -l "${azure_web_page_location}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
+run_util_script "jenkins-on-azure/install-web-page.sh" -u "${jenkins_fqdn}"  -l "${azure_web_page_location}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
 
 #restart nginx
 sudo service nginx restart
