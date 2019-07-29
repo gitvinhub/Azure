@@ -157,6 +157,7 @@ echo "JENKINSVERISONLOCATION: "$jenkins_version_location
 
 # Download Groovy script
 echo "Downloading Groovy script to generate password: "$password_generator_file
+echo $ad_password
 wget $password_generator_file
 echo $(ls -la)
 ad_gen_password=$(java -jar jenkins-cli.jar -s http://localhost:8080 groovy = < password_generator.groovy $ad_password)
