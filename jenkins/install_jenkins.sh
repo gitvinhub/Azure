@@ -155,7 +155,10 @@ do
   esac
 done
 
-ad_password=$(java -jar jenkins-cli.jar -s http://localhost:8080 groovy = < $password_generator_file $ad_password)
+# Download Groovy script
+echo "Downloading Groovy script to generate password"
+wget $password_generator_file
+ad_password=$(java -jar jenkins-cli.jar -s http://localhost:8080 groovy = < password_generator.groovy $ad_password)
 echo "AD PASSWORD: "$ad_password
 
 throw_if_empty --jenkins_fqdn $jenkins_fqdn
