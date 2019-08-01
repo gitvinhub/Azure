@@ -496,7 +496,7 @@ EOF
 )
 
 #Block Anonymous read access
-inter_jenkins_config=$(sed -zr -e"s|<authorizationStrategy.*</authorizationStrategy>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
+inter_jenkins_config=$(sed "s|<authorizationStrategy.*$Unsecured\"/>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
 final_jenkins_config=${inter_jenkins_config//'{auth-strategy-token}'/${jenkins_block_anonymous_conf}}
 echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
 
