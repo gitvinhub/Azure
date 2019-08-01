@@ -23,6 +23,8 @@ Arguments
   --ad_server|-ad                     : Active Directory Server IP.
   --ad_user|-au                       : Active Directory User.
   --ad_password|-ap                   : Active Directory Password.
+  --github_user|-ghu                  : Username of the github account
+  --github_password|-ghp              : Password for the github account
 EOF
 }
 
@@ -133,6 +135,14 @@ do
       ;;
     --ad_password|-ap)
       ad_password="$1"
+      shift
+      ;;
+    --github_user|-ghu)
+      github_user="$1"
+      shift
+      ;;
+    --github_password|-ghp)
+      github_password="$1"
       shift
       ;;
     --help|-help|-h)
@@ -473,7 +483,7 @@ echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/nul
 
 # Create git hub credentials
 wget $credential_generator
-java -jar jenkins-cli.jar -s http://localhost:8080 groovy = < create_credentials.groovy
+java -jar jenkins-cli.jar -s http://localhost:8080 groovy = < create_credentials.groovy $github_user $github_password
 
 # Configure Github Server 
 wget $github_config_generator
