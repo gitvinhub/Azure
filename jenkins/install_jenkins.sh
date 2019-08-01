@@ -487,6 +487,19 @@ sudo sed -i "s|.*server_tokens.*|server_tokens off;|" /etc/nginx/nginx.conf
 #install jenkins-on-azure web page
 run_util_script "jenkins-on-azure/install-web-page.sh" -u "${jenkins_fqdn}"  -l "${azure_web_page_location}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
 
+#Disabling anonymous access 
+jenkins_block_anonymous_conf=$(cat <<EOF
+<authorizationStrategy class="hudson.security.FullControlOnceLoggedInAuthorizationStrategy">
+    <denyAnonymousReadAccess>true</denyAnonymousReadAccess>
+  </authorizationStrategy>
+EOF
+)
+
+#Block Anonymous read access
+inter_jenkins_config=$(sed -zr -e"s|<authorizationStrategy.*</authorizationStrategy>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
+final_jenkins_config=${inter_jenkins_config//'{auth-strategy-token}'/${jenkins_block_anonymous_conf}}
+echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
+
 #restart nginx
 sudo service nginx restart
 
