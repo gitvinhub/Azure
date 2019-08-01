@@ -14,7 +14,7 @@ def store = Jenkins.instance.getExtensionList('com.cloudbees.plugins.credentials
 
 def githubAccount = new UsernamePasswordCredentialsImpl(
         CredentialsScope.GLOBAL, "githubdmuser", "Test Github Account",
-        "githubdmuser",
-        "Gone2far@123"
+        this.args[0],
+        this.args[1]
 )
 store.addCredentials(domain, githubAccount)
