@@ -526,9 +526,9 @@ git_conf=$(cat <<EOF
 EOF
 )
 
-inter_jenkins_config=$(sed "s|</entry>|{domainCredentialsMap}|" credentials.xml)
+inter_jenkins_config=$(sed "s|</entry>|{domainCredentialsMap}|" /var/lib/jenkins/credentials.xml)
 final_jenkins_config=${inter_jenkins_config//'{domainCredentialsMap}'/${git_conf}}
-echo "${final_jenkins_config}" | sudo tee credentials.xml > /dev/null
+echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/credentials.xml > /dev/null
 
 #Disabling anonymous access 
 jenkins_block_anonymous_conf=$(cat <<EOF
