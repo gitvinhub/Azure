@@ -1,3 +1,4 @@
+import jenkins.model.Jenkins
 import net.sf.json.JSONObject
 import org.jenkinsci.plugins.github.config.GitHubPluginConfig
 import org.jenkinsci.plugins.github.config.GitHubServerConfig
