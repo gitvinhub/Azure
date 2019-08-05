@@ -521,7 +521,8 @@ git_conf=$(cat <<EOF
           <description>GitHub (https://api.github.com) auto generated token credentials for githubdmuser</description>
           <secret>$git_hub_token</secret>
         </org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl>
-      </list>
+
+</list>
     </entry>
 EOF
 )
@@ -529,20 +530,6 @@ EOF
 inter_jenkins_config=$(sed "s|</entry>|{domainCredentialsMap}|" /var/lib/jenkins/credentials.xml)
 final_jenkins_config=${inter_jenkins_config//'{domainCredentialsMap}'/${git_conf}}
 echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/credentials.xml > /dev/null
-
-#Disabling anonymous access 
-jenkins_block_anonymous_conf=$(cat <<EOF
-<authorizationStrategy class="hudson.security.FullControlOnceLoggedInAuthorizationStrategy">
-    <denyAnonymousReadAccess>true</denyAnonymousReadAccess>
-  </authorizationStrategy>
-EOF
-)
-
-#Block Anonymous read access
-inter_jenkins_config=$(sed "s|<authorizationStrategy.*$Unsecured\"/>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
-final_jenkins_config=${inter_jenkins_config//'{auth-strategy-token}'/${jenkins_block_anonymous_conf}}
-echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
-
 
 #install nginx
 sudo apt-get install nginx --yes
@@ -568,6 +555,28 @@ sudo apt-get install maven --yes
 # updates gracefully. Jenkins will be trapped in the blank SetupWizard mode after initial user setup, and the user
 # cannot proceed their work on the Jenkins instance.
 #
+# A restart will do the full reloading.
+sudo service jenkins restart
+
+sleep 15
+
+# Create Jobs in Jenkins
+java -jar jenkins-cli.jar -s http://localhost:8080 create-job Deploy_DotNet_App < Deploy_DotNet_App.xml
+java -jar jenkins-cli.jar -s http://localhost:8080 create-job Deploy_HTML_Site.xml < Deploy_HTML_Site.xml
+
+#Disabling anonymous access 
+jenkins_block_anonymous_conf=$(cat <<EOF
+<authorizationStrategy class="hudson.security.FullControlOnceLoggedInAuthorizationStrategy">
+    <denyAnonymousReadAccess>true</denyAnonymousReadAccess>
+  </authorizationStrategy>
+EOF
+)
+
+#Block Anonymous read access
+inter_jenkins_config=$(sed "s|<authorizationStrategy.*$Unsecured\"/>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
+final_jenkins_config=${inter_jenkins_config//'{auth-strategy-token}'/${jenkins_block_anonymous_conf}}
+echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
+
 # A restart will do the full reloading.
 sudo service jenkins restart
 
