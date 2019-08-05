@@ -165,6 +165,8 @@ jenkins_version_location=$artifacts_location'jenkins-verified-ver'
 password_generator_file=$artifacts_location'password_generator.groovy'
 credential_generator=$artifacts_location'create_credentials.groovy'
 github_config_generator=$artifacts_location'github_configuration.groovy'
+dotnet_job_path=$artifacts_location'Deploy_DotNet_App.xml'
+html_job_path=$artifacts_location'Deploy_HTML_Site.xml'
 azure_web_page_location="/usr/share/nginx/azure"
 jenkins_release_type="LTS"
 artifacts_location_sas_token=""
@@ -561,7 +563,9 @@ sudo service jenkins restart
 sleep 15
 
 # Create Jobs in Jenkins
+wget $dotnet_job_path
 java -jar jenkins-cli.jar -s http://localhost:8080 create-job Deploy_DotNet_App < Deploy_DotNet_App.xml
+wget $html_job_path
 java -jar jenkins-cli.jar -s http://localhost:8080 create-job Deploy_HTML_Site.xml < Deploy_HTML_Site.xml
 
 #Disabling anonymous access 
