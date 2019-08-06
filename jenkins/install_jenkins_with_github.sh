@@ -26,6 +26,10 @@ Arguments
   --github_user|-ghu                  : Username of the github account
   --github_password|-ghp              : Password for the github account
   --github_pat|-ght                   : Personalized Access token for Github
+  --app_service_rg|-asrg              : Resource Group Name for APP Service
+  --app_service_loc|-asl              : Location for App Service
+  --app_serice_plan|-asp              : Name of the App Service Plan
+  --app_service_name|-asn             : Name of the App Service
 EOF
 }
 
@@ -150,6 +154,22 @@ do
       github_pat="$1"
       shift
       ;;
+    --app_service_rg|-asrg )
+      app_service_rg="$1"
+      shift
+      ;;
+    --app_service_loc|-asl )
+      app_service_loc="$1"
+      shift
+      ;;
+    --app_serice_plan|-asp)
+      app_serice_plan="$1"
+      shift
+      ;;      
+    --app_service_name|-asn)
+      app_service_name="$1"
+      shift
+      ;;      
     --help|-help|-h)
       print_usage
       exit 13
@@ -566,6 +586,21 @@ sleep 15
 wget $dotnet_job_path
 java -jar jenkins-cli.jar -s http://localhost:8080 create-job Deploy_DotNet_App < Deploy_DotNet_App.xml
 wget $html_job_path
+# Update the Job with APP service information
+prop_conf=$(cat <<EOF
+        <propertiesContent>AZURE_CRED_ID=azure_service_principal
+                           RES_GROUP=$app_service_rg
+                           WEB_APP=$app_service_name
+                           SUBSCRIPTION=glhcss-c0-customer-web-services
+                           WEB_APP_PLAN=$app_serice_plan
+                           LOCATION=$app_service_loc</propertiesContent>
+EOF
+)
+
+inter_jenkins_config=$(sed -zr -e"s|<propertiesContent.*</propertiesContent>|{propertiesContent}|" Deploy_HTML_Site.xml)
+final_jenkins_config=${inter_jenkins_config//'{propertiesContent}'/${prop_conf}}
+echo "${final_jenkins_config}" | sudo tee Deploy_HTML_Site.xml > /dev/null
+
 java -jar jenkins-cli.jar -s http://localhost:8080 create-job Deploy_HTML_Site.xml < Deploy_HTML_Site.xml
 
 #Disabling anonymous access 
